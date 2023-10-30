@@ -107,4 +107,28 @@ private string RenderRazorViewToString(string viewName, object model)
 }
 
 
+using System.Web.Mvc;
+
+namespace YourWebAPIProject.Controllers
+{
+    public class MVCController : ApiController
+    {
+        public HttpResponseMessage Get()
+        {
+            // Render the MVC view as HTML
+            var viewResult = ViewEngines.Engines.FindView(ControllerContext, "Hello", null);
+            var writer = new StringWriter();
+            var viewContext = new ViewContext(ControllerContext, viewResult.View, new ViewDataDictionary(), new TempDataDictionary(), writer);
+            viewResult.View.Render(viewContext, writer);
+
+            // Create an HTTP response with the HTML content
+            var response = new HttpResponseMessage(HttpStatusCode.OK);
+            response.Content = new StringContent(writer.ToString(), Encoding.UTF8, "text/html");
+
+            return response;
+        }
+    }
+}
+
+
 ```
