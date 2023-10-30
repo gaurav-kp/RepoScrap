@@ -68,4 +68,43 @@ public class CustomerController : ControllerBase
 }
 
 
+
+private string RenderRazorViewToString(string viewName, object model)
+{
+    var httpContext = new DefaultHttpContext { RequestServices = HttpContext.RequestServices };
+    var actionContext = new ActionContext(httpContext, new RouteData(), new ActionDescriptor());
+
+    using (var sw = new StringWriter())
+    {
+        var viewEngineResult = _viewEngine.FindView(actionContext, viewName, false);
+
+        if (viewEngineResult.View == null)
+        {
+            throw new ArgumentNullException($"{viewName} does not match any available view");
+        }
+
+        var viewData = new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary())
+        {
+            Model = model
+        };
+
+        var tempData = new TempDataDictionary(actionContext.HttpContext, _tempDataProvider);
+
+        var viewContext = new ViewContext(
+            actionContext,
+            viewEngineResult.View,
+            viewData,
+            tempData, // Pass the correct TempDataDictionary here
+            sw,
+            new HtmlHelperOptions()
+        );
+
+        var t = viewEngineResult.View.RenderAsync(viewContext);
+        t.Wait();
+
+        return sw.ToString();
+    }
+}
+
+
 ```
