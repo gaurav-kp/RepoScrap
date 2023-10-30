@@ -132,3 +132,44 @@ namespace YourWebAPIProject.Controllers
 
 
 ```
+
+
+# Example 2
+
+```
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.ViewEngines;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using System.IO;
+
+namespace YourWebAPIProject.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class MVCController : ControllerBase
+    {
+        private readonly ICompositeViewEngine _viewEngine;
+
+        public MVCController(ICompositeViewEngine viewEngine)
+        {
+            _viewEngine = viewEngine;
+        }
+
+        [HttpGet]
+        public IActionResult Get()
+        {
+            // Render the MVC view as HTML
+            var viewResult = _viewEngine.FindView(ControllerContext, "Hello", false);
+            var writer = new StringWriter();
+            var viewContext = new ViewContext(ControllerContext, viewResult.View, new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary()), new TempDataDictionary(ControllerContext.HttpContext, _tempDataProvider), writer, new HtmlHelperOptions());
+
+            viewResult.View.RenderAsync(viewContext);
+
+            // Create an HTTP response with the HTML content
+            return Content(writer.ToString(), "text/html");
+        }
+    }
+}
+
+```
