@@ -173,3 +173,18 @@ namespace YourWebAPIProject.Controllers
 }
 
 ```
+
+
+
+
+#SQL
+
+```sql
+
+SELECT Id, LangCode, CtName
+FROM your_table_name
+WHERE (LangCode = 'fr' AND Id NOT IN (SELECT Id FROM your_table_name WHERE LangCode = 'en'))
+   OR LangCode = 'en';
+
+
+```
