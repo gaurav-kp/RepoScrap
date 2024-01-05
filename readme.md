@@ -1,3 +1,93 @@
+
+# error log in table storage
+```
+using Microsoft.Azure.Cosmos.Table;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System;
+
+[ApiController]
+[Route("api/[controller]")]
+public class ErrorController : ControllerBase
+{
+    private readonly CloudTable errorLogTable;
+    private readonly ILogger<ErrorController> logger;
+
+    public ErrorController(ILogger<ErrorController> logger)
+    {
+        // Replace with your Azure Storage connection string and table name
+        string storageConnectionString = "YourStorageConnectionString";
+        string tableName = "ErrorLogs";
+
+        // Create a CloudTable instance
+        CloudStorageAccount storageAccount = CloudStorageAccount.Parse(storageConnectionString);
+        CloudTableClient tableClient = storageAccount.CreateCloudTableClient(new TableClientConfiguration());
+        errorLogTable = tableClient.GetTableReference(tableName);
+
+        // Create the table if it doesn't exist
+        errorLogTable.CreateIfNotExists();
+
+        this.logger = logger;
+    }
+
+    [HttpGet("generate-error")]
+    public IActionResult GenerateError()
+    {
+        try
+        {
+            // Simulate an error
+            throw new Exception("This is a simulated error for logging.");
+
+            // Additional business logic could be placed here
+        }
+        catch (Exception ex)
+        {
+            // Log the error
+            LogErrorToTableStorage(ex);
+
+            // Log the error to the application log
+            logger.LogError(ex, "An error occurred while processing the request.");
+
+            // Return a generic error response
+            return StatusCode(500, "An error occurred. Please try again later.");
+        }
+    }
+
+    private void LogErrorToTableStorage(Exception ex)
+    {
+        try
+        {
+            // Create an ErrorLog entity
+            ErrorLog errorLog = new ErrorLog
+            {
+                PartitionKey = DateTime.UtcNow.ToString("yyyyMMdd"),
+                RowKey = Guid.NewGuid().ToString(),
+                Timestamp = DateTime.UtcNow,
+                ErrorMessage = ex.Message,
+                StackTrace = ex.StackTrace
+            };
+
+            // Insert the entity into the table
+            TableOperation insertOperation = TableOperation.Insert(errorLog);
+            errorLogTable.ExecuteAsync(insertOperation);
+        }
+        catch (Exception logEx)
+        {
+            // Log the secondary error (error during logging)
+            logger.LogError(logEx, "An error occurred while logging the error to Azure Table Storage.");
+        }
+    }
+}
+
+public class ErrorLog : TableEntity
+{
+    public string ErrorMessage { get; set; }
+    public string StackTrace { get; set; }
+}
+
+
+```
+
 ```
 using Microsoft.AspNetCore.Mvc;
 using DinkToPdf;
